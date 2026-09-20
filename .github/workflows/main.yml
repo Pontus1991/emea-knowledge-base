@@ -1,28 +1,36 @@
 name: Deploy Knowledge Base to GitHub Pages
 
-# 1. Triggern: Körs automatiskt så fort du skickar upp (pushar) ny kod till main-branchen
 on:
   push:
     branches:
       - main
 
-# 2. Rättigheter för att publicera
 permissions:
   contents: read
   pages: write
   id-token: write
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest # Körs på en virtuell Linux-maskin i molnet!
-    
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
     steps:
-      # Steg A: Hämta koden från ditt repo
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Steg B: Ladda upp HTML-filerna till GitHub Pages
-      - name: Setup Pages
-        uses: actions/deploy-pages@v4
+      # 1. Det här steget saknades: Ladda upp HTML-filerna så att GitHub Pages hittar dem
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          artifact_name: github-pages
+          path: '.' # Publicerar allt i rotmappen (inklusive index.html)
+
+      # 2. Publicera artifactet till GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
